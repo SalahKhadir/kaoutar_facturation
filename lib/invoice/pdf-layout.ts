@@ -2,7 +2,7 @@ import { amountSentence } from './amount-words';
 import type { PDFFont } from 'pdf-lib';
 import type { Invoice } from './model';
 import { cents, currency, displayDate, total } from './model';
-import { branding, invoiceLayout as l } from './branding';
+import { invoiceLayout as l } from './branding';
 
 // pdf-lib emits standard-font glyphs without kerning adjustments. Measure those
 // exact advances so wrapping and right/center alignment match the drawn PDF.
@@ -44,13 +44,12 @@ export function measureInvoice(invoice: Invoice, regular: PDFFont, bold: PDFFont
     const labelWidth = textWidth('Patient : ', bold, l.fontSize);
     const title = wrapText(`FACTURE N° : ${invoice.number}`, bold, 18, width);
     const informationTop = Math.max(l.informationTop, l.titleTop + title.length * 22 + 12);
-    const address = wrapText(branding.address, regular, 8.5, columnWidth);
     const patient = wrapText(invoice.patient, regular, l.fontSize, columnWidth - labelWidth);
-    const informationHeight = Math.max(16 + address.length * l.lineHeight, patient.length * l.lineHeight);
+    const informationHeight = patient.length * l.lineHeight;
     const firstTableTop = Math.max(l.tableTop, informationTop + informationHeight + 16);
     const sentence = wrapText(amountSentence(total(invoice)), regular, l.fontSize, width);
     const totalsHeight = 6 + 18 + sentence.length * l.lineHeight + 8 + (invoice.paid === '' ? 0 : 32) + l.signatureSpace;
-    return { title, address, patient, patientX, labelWidth, informationTop, firstTableTop, sentence, totalsHeight };
+    return { title, patient, patientX, labelWidth, informationTop, firstTableTop, sentence, totalsHeight };
 }
 
 export function planInvoice(invoice: Invoice, font: PDFFont, bold: PDFFont = font) {

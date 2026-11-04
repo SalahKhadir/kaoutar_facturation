@@ -21,7 +21,7 @@ export async function buildInvoicePdf(input: Invoice, backgroundBytes: Uint8Arra
         background = await pdf.embedPng(backgroundBytes);
         validateBackgroundDimensions(background.width, background.height);
     } catch (cause) {
-        throw new Error(cause instanceof Error && cause.message.includes('ratio A4') ? cause.message : backgroundError);
+        throw new Error(cause instanceof Error && cause.message.includes('ratio A5') ? cause.message : backgroundError);
     }
     const regular = await pdf.embedFont(StandardFonts.Helvetica);
     const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
@@ -29,7 +29,6 @@ export async function buildInvoicePdf(input: Invoice, backgroundBytes: Uint8Arra
     try {
         regular.encodeText(invoice.number);
         regular.encodeText(invoice.patient);
-        for (const value of Object.values(invoice.fiscal)) regular.encodeText(value || '');
         pages = planInvoice(invoice, regular, bold);
         measured = measureInvoice(invoice, regular, bold);
     } catch (cause) {
@@ -51,8 +50,6 @@ export async function buildInvoicePdf(input: Invoice, backgroundBytes: Uint8Arra
         if (pageIndex === 0) {
             rightText(page, `Témara, le : ${displayDate(invoice.date)}`, l.dateTop, regular, headingInk);
             measured.title.forEach((value, i) => text(page, value, (l.left + l.right - textWidth(value, bold, 18)) / 2, l.titleTop + i * 22, bold, 18, headingInk));
-            text(page, branding.invoiceDoctor, l.left, measured.informationTop, bold, 10);
-            measured.address.forEach((value, i) => text(page, value, l.left, measured.informationTop + 16 + i * l.lineHeight, regular, 8.5));
             text(page, 'Patient :', measured.patientX, measured.informationTop, bold);
             measured.patient.forEach((value, i) => text(page, value, measured.patientX + measured.labelWidth, measured.informationTop + i * l.lineHeight));
         } else {
@@ -104,7 +101,7 @@ export async function buildInvoicePdf(input: Invoice, backgroundBytes: Uint8Arra
                 rightText(page, `Reste à payer : ${currency(balance(invoice))}`, top+16);
             }
             let fiscalTop: number = l.fiscalTop;
-            for (const [label, value] of [['IF', invoice.fiscal.if], ['ICE', invoice.fiscal.ice], ['INPE', invoice.fiscal.inpe]]) {
+            for (const [label, value] of [['IF', branding.fiscal.if], ['ICE', branding.fiscal.ice], ['INP', branding.fiscal.inp]]) {
                 const prefix = `${label} : `;
                 const labelWidth = textWidth(prefix, bold, l.fontSize);
                 const lines = wrapText(value || '', regular, l.fontSize, l.fiscalWidth-labelWidth);

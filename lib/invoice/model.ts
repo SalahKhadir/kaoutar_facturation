@@ -1,11 +1,9 @@
 import { z } from 'zod';
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date invalide').refine(v => !isNaN(Date.parse(v)) && new Date(v).toISOString().slice(0, 10) === v, 'Date invalide');
 const money = z.string().regex(/^\d{1,7}([.,]\d{1,2})?$/, 'Saisissez un montant positif, avec deux décimales maximum');
-const fiscalIdentifier = z.string().trim().max(60, 'Maximum 60 caractères pour un identifiant fiscal').optional();
 export const invoiceSchema = z.object({
     number: z.string().trim().min(1, 'Numéro requis').max(60, 'Maximum 60 caractères pour le numéro'), date,
     patient: z.string().trim().min(1, 'Nom du patient requis').max(150, 'Maximum 150 caractères pour le nom'),
-    fiscal: z.object({ if: fiscalIdentifier, ice: fiscalIdentifier, inpe: fiscalIdentifier }),
     paid: z.union([z.literal(''), money]),
     treatments: z.array(z.object({ date, tooth: z.string().max(30, 'Maximum 30 caractères pour les dents'), description: z.string().trim().min(1, 'Désignation requise').max(700, 'Maximum 700 caractères'), price: money })).min(1, 'Ajoutez un acte').max(100, 'Maximum 100 actes'),
 }).superRefine((v, ctx) => { if (v.paid && cents(v.paid) > total(v))
@@ -21,4 +19,4 @@ export const displayDate = (value: string) => value.split('-').reverse().join('/
 export const filename = (value: string) => `Facture_${value.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 60) || 'sans_numero'}.pdf`;
 export function today() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
 export const emptyRow = () => ({ date: today(), tooth: '', description: '', price: '' });
-export const defaults = (): Invoice => ({ number: `${new Date().getFullYear()}-001`, date: today(), patient: '', paid: '', fiscal: { if: '', ice: '', inpe: '' }, treatments: [emptyRow()] });
+export const defaults = (): Invoice => ({ number: `${new Date().getFullYear()}-001`, date: today(), patient: '', paid: '', treatments: [emptyRow()] });

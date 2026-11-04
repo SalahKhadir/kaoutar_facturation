@@ -15,10 +15,7 @@ it('additionne plusieurs prix et conserve les centimes du règlement', () => {
     expect(Object.keys(invoiceSchema.parse(invoice).treatments[0]).sort()).toEqual(['date','description','price','tooth']);
 });
 
-it('valide les identifiants facultatifs sans conversion numérique',()=>{
-    const input={...valid(),fiscal:{if:' 00012 ',ice:'001234567890123',inpe:''}};
-    expect(invoiceSchema.parse(input).fiscal).toEqual({if:'00012',ice:'001234567890123',inpe:''});
-    expect(invoiceSchema.parse({...valid(),fiscal:{}}).fiscal).toEqual({});
-    expect(invoiceSchema.safeParse({...input,fiscal:{if:'X'.repeat(61)}}).success).toBe(false);
-    expect(defaults().fiscal).toEqual({if:'',ice:'',inpe:''});
+it('exclut les identifiants professionnels des données du formulaire',()=>{
+    expect(defaults()).not.toHaveProperty('fiscal');
+    expect(invoiceSchema.parse({...valid(),fiscal:{if:'ancienne valeur'}})).not.toHaveProperty('fiscal');
 });

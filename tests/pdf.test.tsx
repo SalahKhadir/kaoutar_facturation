@@ -3,10 +3,10 @@ import { it, expect } from 'vitest';
 import { PDFDocument, PDFName, PDFDict, PDFArray, PDFRawStream, decodePDFRawStream } from 'pdf-lib';
 import { buildInvoicePdf } from '../components/invoice/document';
 import { defaults } from '../lib/invoice/model';
-import { INVOICE_TEXT_COLOR, INVOICE_HEADING_COLOR, INVOICE_TABLE_HEADER_BG, invoiceLayout as l } from '../lib/invoice/branding';
+import { branding, INVOICE_TEXT_COLOR, INVOICE_HEADING_COLOR, INVOICE_TABLE_HEADER_BG, invoiceLayout as l } from '../lib/invoice/branding';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-const background = new Uint8Array(readFileSync('public/branding/facture-background.png'));
-it.each([1, 3, 5, 10, 15, 20, 30])('produit %i actes avec fond sur chaque page A4', async count => {
+const background = new Uint8Array(readFileSync('public/branding/facture_background.png'));
+it.each([1, 3, 5, 10, 15, 20, 30])('produit %i actes avec fond sur chaque page A5', async count => {
     const invoice = { ...defaults(), number: '2026-003', date: '2026-11-04', patient: count===5 ? 'Patient de démonstration avec un nom composé particulièrement long et plusieurs prénoms pour tester les retours à la ligne' : 'KHADIR Salah', paid: '100,25', treatments: Array.from({ length: count }, (_, i) => ({ date: '2026-11-04', tooth: i % 2 ? '16' : '', description: `${i+1}. ` + (i % 3 === 0 ? 'Traitement conservateur avec restauration de la dent et contrôle de l’occlusion. Description détaillée pour vérifier les retours à la ligne et les caractères accentués.\nContrôle après traitement.' : 'Détartrage et polissage'), price: '450,50' })) };
     const bytes = await buildInvoicePdf(invoice, background);
     const pdf = await PDFDocument.load(bytes);
@@ -17,7 +17,7 @@ it.each([1, 3, 5, 10, 15, 20, 30])('produit %i actes avec fond sur chaque page A
         const images = resources.lookup(PDFName.of('XObject'), PDFDict);
         expect(images.keys()).toHaveLength(1);
         const stream = pdf.context.lookup(images.get(images.keys()[0]));
-        expect(String(stream)).toContain('/Width 1414');
+        expect(String(stream)).toContain('/Width 1410');
         expect(String(stream)).toContain('/Height 2000');
     }
     mkdirSync('/tmp/sijilmassa-pdfs', { recursive: true });
@@ -33,16 +33,16 @@ it.each(['0','100','300,99','9999999,99'])('génère les variantes monétaires %
     writeFileSync(`/tmp/sijilmassa-pdfs/amount-${price}.pdf`,bytes);
 });
 
-it('imprime les identifiants saisis et préserve les zéros initiaux',async()=>{
-    const invoice={...defaults(),patient:'Patient test',fiscal:{if:' 001234 ',ice:'001234567890123',inpe:'000987'},treatments:[{date:'2026-11-04',tooth:'',description:'Contrôle',price:'100'}]};
+it('imprime les identifiants permanents et préserve les zéros initiaux',async()=>{
+    const invoice={...defaults(),patient:'Patient test',treatments:[{date:'2026-11-04',tooth:'',description:'Contrôle',price:'100'}]};
     const bytes=await buildInvoicePdf(invoice,background);
-    writeFileSync('/tmp/sijilmassa-pdfs/configured-fiscal.pdf',bytes);
+    writeFileSync('/tmp/sijilmassa-pdfs/permanent-fiscal.pdf',bytes);
     const pdf=await PDFDocument.load(bytes);
     expect(pdf.getPageCount()).toBe(1);
     const font=await pdf.embedFont('Helvetica');
     const contents=pdf.getPage(0).node.lookup(PDFName.of('Contents'),PDFArray);
     const operators=contents.asArray().map(ref=>{const stream=pdf.context.lookup(ref);if(!(stream instanceof PDFRawStream)) throw new Error('Flux PDF attendu');return Buffer.from(decodePDFRawStream(stream).decode()).toString();}).join('\n');
-    for(const value of ['001234','001234567890123','000987']) expect(operators).toContain(font.encodeText(value).toString());
+    for(const value of Object.values(branding.fiscal)) expect(operators).toContain(font.encodeText(value).toString());
     expect(operators).not.toContain('5061676520'); // encoded "Page "
     const colors=Array.from(operators.matchAll(/([\d.]+) ([\d.]+) ([\d.]+) (rg|RG)/g));
     expect(colors.length).toBeGreaterThan(10);
