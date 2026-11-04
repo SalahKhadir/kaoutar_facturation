@@ -3,9 +3,9 @@ import { it, expect } from 'vitest';
 import { PDFDocument, PDFName, PDFDict, PDFArray, PDFRawStream, decodePDFRawStream } from 'pdf-lib';
 import { buildInvoicePdf } from '../components/invoice/document';
 import { defaults } from '../lib/invoice/model';
-import { INVOICE_TEXT_COLOR, INVOICE_HEADING_COLOR, invoiceLayout as l } from '../lib/invoice/branding';
+import { INVOICE_TEXT_COLOR, INVOICE_HEADING_COLOR, INVOICE_TABLE_HEADER_BG, invoiceLayout as l } from '../lib/invoice/branding';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-const background = new Uint8Array(readFileSync('public/branding/facture-bg.png'));
+const background = new Uint8Array(readFileSync('public/branding/facture-background.png'));
 it.each([1, 3, 5, 10, 15, 20, 30])('produit %i actes avec fond sur chaque page A4', async count => {
     const invoice = { ...defaults(), number: '2026-003', date: '2026-11-04', patient: count===5 ? 'Patient de démonstration avec un nom composé particulièrement long et plusieurs prénoms pour tester les retours à la ligne' : 'KHADIR Salah', paid: '100,25', treatments: Array.from({ length: count }, (_, i) => ({ date: '2026-11-04', tooth: i % 2 ? '16' : '', description: `${i+1}. ` + (i % 3 === 0 ? 'Traitement conservateur avec restauration de la dent et contrôle de l’occlusion. Description détaillée pour vérifier les retours à la ligne et les caractères accentués.\nContrôle après traitement.' : 'Détartrage et polissage'), price: '450,50' })) };
     const bytes = await buildInvoicePdf(invoice, background);
@@ -48,7 +48,10 @@ it('imprime les identifiants saisis et préserve les zéros initiaux',async()=>{
     expect(colors.length).toBeGreaterThan(10);
     const expected=[1,3,5].map(start=>parseInt(INVOICE_TEXT_COLOR.slice(start,start+2),16)/255);
     const heading=[1,3,5].map(start=>parseInt(INVOICE_HEADING_COLOR.slice(start,start+2),16)/255);
+    const headerBg=[1,3,5].map(start=>parseInt(INVOICE_TABLE_HEADER_BG.slice(start,start+2),16)/255);
     const accents=colors.filter(color=>heading.every((value,i)=>Math.abs(Number(color[i+1])-value)<1e-10));
     expect(accents).toHaveLength(2); // Date and main invoice title only.
-    for(const color of colors.filter(color=>!accents.includes(color))) for(let i=0;i<3;i++) expect(Number(color[i+1])).toBeCloseTo(expected[i],10);
+    const tableHeaders=colors.filter(color=>headerBg.every((value,i)=>Math.abs(Number(color[i+1])-value)<1e-10));
+    expect(tableHeaders).toHaveLength(1); // Table header background fill.
+    for(const color of colors.filter(color=>!accents.includes(color) && !tableHeaders.includes(color))) for(let i=0;i<3;i++) expect(Number(color[i+1])).toBeCloseTo(expected[i],10);
 });

@@ -1,5 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib';
-import { branding, INVOICE_TEXT_COLOR, INVOICE_HEADING_COLOR, invoiceLayout as l } from '@/lib/invoice/branding';
+import { branding, INVOICE_TEXT_COLOR, INVOICE_HEADING_COLOR, INVOICE_TABLE_HEADER_BG, invoiceLayout as l } from '@/lib/invoice/branding';
 import { backgroundError, loadBackground, validateBackgroundDimensions } from '@/lib/invoice/background';
 import { measureInvoice, planInvoice, textWidth, wrapText } from '@/lib/invoice/pdf-layout';
 import { invoiceSchema, type Invoice, total, balance, cents, currency, displayDate } from '@/lib/invoice/model';
@@ -7,6 +7,8 @@ import { invoiceSchema, type Invoice, total, balance, cents, currency, displayDa
 const ink = rgb(...[1, 3, 5].map(start => parseInt(INVOICE_TEXT_COLOR.slice(start, start + 2), 16) / 255) as [number, number, number]);
 
 const headingInk = rgb(...[1, 3, 5].map(start => parseInt(INVOICE_HEADING_COLOR.slice(start, start + 2), 16) / 255) as [number, number, number]);
+
+const tableHeaderBg = rgb(...[1, 3, 5].map(start => parseInt(INVOICE_TABLE_HEADER_BG.slice(start, start + 2), 16) / 255) as [number, number, number]);
 
 /** The only invoice renderer: used by preview, download, print, and PDF tests. */
 export async function buildInvoicePdf(input: Invoice, backgroundBytes: Uint8Array): Promise<Uint8Array> {
@@ -57,6 +59,13 @@ export async function buildInvoicePdf(input: Invoice, backgroundBytes: Uint8Arra
             const reference = wrapText(`Facture N° : ${invoice.number} — suite`, bold, l.fontSize, l.right-l.left);
             reference.forEach((value,i)=>text(page,value,l.left,l.contentTop+i*l.lineHeight,bold));
         }
+        page.drawRectangle({
+            x: l.left,
+            y: l.height - planned.tableTop - l.headingHeight,
+            width: l.right - l.left,
+            height: l.headingHeight,
+            color: tableHeaderBg,
+        });
         let x = l.left;
         ['DATE', 'DENTS', 'DESCRIPTION', 'PRIX'].forEach((value, i) => {
             const labelX = i === 2 ? x + l.cellPadding : x + (l.columns[i] - textWidth(value, bold, l.fontSize)) / 2;

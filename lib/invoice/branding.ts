@@ -1,5 +1,6 @@
 export const INVOICE_TEXT_COLOR = '#000000';
 export const INVOICE_HEADING_COLOR = '#5e0b1b';
+export const INVOICE_TABLE_HEADER_BG = '#f0f0f0';
 export const CONTENT_TOP_OFFSET = 24;
 
 export const branding = {
@@ -8,7 +9,7 @@ export const branding = {
     doctor: 'Dr Kaoutar Samghouli',
     invoiceDoctor: 'SAMGHOULI Kaoutar',
     address: 'Lotissement Bourass N°22, 1er étage, App 04, Témara',
-    background: '/branding/facture-bg.png',
+    background: '/branding/facture-background.png',
 };
 
 // Coordinates in points, measured on the original 1414 × 2000 blank artwork.
